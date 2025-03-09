@@ -1,0 +1,60 @@
+#this can extract ca from every blockhian
+def extract_token_address(text):
+    # Regex pattern for check if in the text provided a dex URL
+    dexscreener_pattern = r"https://dexscreener\.com/([A-Za-z]+)/([A-Za-z0-9]+)"
+
+    # Regex pattern for check if we have a token address in text
+    general_token_address_pattern = r"\b([A-Za-z0-9]{32,66})\b"
+
+    # Chain detection patterns
+    eth_chain_pattern = r"\b(eth|ethereum)\b"
+    base_chain_pattern = r"\b(base)\b"
+    bsc_chain_pattern = r"\b(bsc|binance smart chain)\b"
+
+    dexscreener_match = re.search(dexscreener_pattern, text)
+    if dexscreener_match:
+        chain = dexscreener_match.group(1).lower()  # to get the chain
+        token_address = dexscreener_match.group(2)  # to get the token address
+        return {
+            "success": True,
+            "chain": chain,
+            "token_address": token_address,
+            "source": "DexScreener URL"
+        }
+    general_match = re.search(general_token_address_pattern, text)
+    # chain set up by most used to less used by callers that way reduce latency and performance optimization
+    if general_match:
+        token_address = general_match.group(1)
+        if re.match(r"^T[A-Za-z0-9]{33}$", token_address):
+            chain = "tron"
+        elif re.match(r"[1-9A-HJ-NP-Za-km-z]{32,44}$", token_address):
+            chain = "solana"
+        elif re.match(r"^0x[A-Fa-f0-9]{40}$", token_address):
+            if (re.search(eth_chain_pattern, text, re.IGNORECASEI)):
+                chain = "ethereum"
+            elif (re.search(bsc_chain_pattern, text, re.IGNORECASEI)):
+                chain = "bsc"
+            elif (re.search(base_chain_pattern, text, re.IGNORECASEI)):
+                chain = "base"
+            else:
+                chain = "eth/base/bsc"
+        elif re.match(r"^0x[A-Fa-f0-9]{64}$", token_address):
+            chain = "sui"
+        elif re.match(r"^EQ[A-Za-z0-9+/]{46}$", token_address):
+            chain = "ton"
+        else:
+            return {
+                "success": False,
+                "error": "invalid token address provided in the text."
+            }
+
+        return {
+            "success": True,
+            "chain": chain,
+            "token_address": token_address,
+            "source": "General token address"
+        }
+    return {
+        "success": False,
+        "error": "No token address provided in the text."
+    }

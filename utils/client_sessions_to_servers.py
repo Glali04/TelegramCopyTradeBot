@@ -13,24 +13,25 @@ class HTTPClient:
     def __init__(self):
         self.sessions = {}  # stores session for different servers
 
-    async def start_session(self, base_url):
+#i added headers parameter, for Jupiter and dex i only need accept header but for birdeye i will need to add additional headers to be able to communicate with server
+    async def start_session(self, base_url, headers):
         """True if the session has been closed, False otherwise. if we call it on ClientSession"""
         if base_url not in self.sessions or self.sessions[base_url].closed:
-            headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
+            if headers is None:
+                headers = {
+                    'Accept': 'application/json'
+                }
             self.sessions[base_url] = aiohttp.ClientSession(base_url=base_url, timeout=aiohttp.ClientTimeout(1),
                                                             headers=headers)
 
-    async def fetch(self, base_url, endpoint, params=None, data=None, swap_endpoint=False):
+    async def fetch(self, base_url, endpoint, headers=None, params=None, data=None, swap_endpoint=False):
         """Fetch data from API with retries and error handling."""
-        await self.start_session(base_url)
+        await self.start_session(base_url, headers)
         session = self.sessions[base_url]
 
         error_information = f"Occurred: {datetime.now()}, on server: {base_url}/{endpoint}"
 
-        async for attempt in AsyncRetrying(stop=stop_after_attempt(2), wait=wait_fixed(1.0)):
+        async for attempt in AsyncRetrying(stop=stop_after_attempt(5), wait=wait_fixed(1.0)):
             with attempt:
                 try:
                     if not swap_endpoint:
@@ -38,7 +39,11 @@ class HTTPClient:
                             response.raise_for_status()
                             return await response.json()
                     else:
-                        async with session.post(f"/{endpoint}", params=params, data=data) as response:
+                        headers = {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                        async with session.post(f"/{endpoint}", params=params, data=data, headers=headers) as response:
                             response.raise_for_status()
                             return await response.json()
 

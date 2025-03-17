@@ -1,7 +1,6 @@
 from handlers.client import app
 from utils import regex, fetch_token_data
 import asyncio
-from utils.client_sessions_to_servers import sessions
 
 #it will fetch messages from caller groups, via TCP socket, if message is sent in group we will get it immediately
 @app.on_message()

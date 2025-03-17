@@ -4,7 +4,6 @@ from client_sessions_to_servers import http_client
 sol_price = None  # Global variable to store latest SOL price
 wsol_address = "So11111111111111111111111111111111111111112"
 
-
 async def fetch_sol_price():
     global sol_price  # Use global variable
     base_url = "https://api.jup.ag"
@@ -17,8 +16,11 @@ async def fetch_sol_price():
 async def sol_price_loop():
     while True:
         await fetch_sol_price()
-        await asyncio.sleep(1800) # Sleep for 30 minutes
+        await asyncio.sleep(1800)  # Sleep for 30 minutes
 
+
+# When another function tries to access sol_price, this function ensures that it waits until sol_price_loop() updates it
+# if sol_price has already been fetched, it returns immediately
 async def get_sol_price():
     while sol_price is None:
         print("Waitting for SOL price update")

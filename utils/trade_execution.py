@@ -28,21 +28,37 @@ async def buy_token(token_to_buy: TrackedToken):
         endpoint_for_swap = f"swap/v1/swap"
         swap = await swap_api(endpoint_for_swap, quote)
         if swap is not None:
-            await send_and_confirm_transaction(swap.get("swapTransaction"),
-                                               token_to_buy)  # Send only the Transaction, which we will send to blockchain
+            token_to_buy.bought = raw_amount_sol
+            result = await send_and_confirm_transaction(swap.get("swapTransaction"),
+                                               token_to_buy)
+            # Send only the Transaction, which we will send to blockchain
+            if result:
+                print(f"successfully bought the token: {token_to_buy.base_token}")
+            else:
+                print(f"error occurred while selling the token: {token_to_buy.base_token}")
 
 
 async def sell_token(token_to_sell: TrackedToken, sell_all: bool):
+    if sell_all:
+        sell_amount = token_to_sell.raw_amount
+    else:
+        sell_amount = token_to_sell.raw_amount * 0.15
+
     endpoint_for_quote = f"swap/v1/quote?inputMint={token_to_sell.base_token}&outputMint={token_to_sell.quote_token}" \
-                         f"&amount={token_to_sell.raw_amount_we_own}" \
+                         f"&amount={sell_amount}" \
                          f"slippageBps=1000&restrictIntermediateTokens=true&maxAccounts=64"
     quote = await quote_api(endpoint_for_quote)
     if quote is not None:
         endpoint_for_swap = f"swap/v1/swap"
+        out_amount = int(quote.get("outAmount"))
         swap = await swap_api(endpoint_for_swap, quote)
         if swap is not None:
-            await send_and_confirm_transaction(swap.get("swapTransaction"), token_to_sell,
+            result = await send_and_confirm_transaction(swap.get("swapTransaction"), out_amount, token_to_sell,
                                                sell_all, sell_transaction=True)
+            if result:
+                print(f"successfully sold the token: {token_to_sell.base_token}")
+            else:
+                print(f"error occurred while selling the token: {token_to_sell.base_token}")
 
 
 async def quote_api(endpoint):

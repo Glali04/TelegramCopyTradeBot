@@ -11,6 +11,7 @@ from solana.rpc.types import TokenAccountOpts
 
 from utils.tracked_tokens import TrackedToken, tracked_tokens
 from solana_client import get_client, get_keypair
+from database.commands import insert_query
 
 keypair = get_keypair()
 
@@ -22,7 +23,7 @@ def build_and_sign_transaction(swap_transaction):
     return signed_tx
 
 
-async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, sell_all=False, sell_transaction=False):
+async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, out_amount=None, sell_all=False, sell_transaction=False):
     signed_tx = build_and_sign_transaction(swap_transaction)
     connection = get_client()
 
@@ -44,9 +45,12 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, se
                     print(f"✅ Transaction {signature} confirmed!")
                     # we will look at does the transaction is sell or buy transaction
                     if sell_transaction:
+                        token.sold += out_amount
                         # transaction is confirmed if we sold everything we will remove it from list else we will take 15% profit taking (strategy)
                         if sell_all:
                             tracked_tokens.remove(token)
+                            await insert_query(token.user_id, token.base_token, token.start_time, token.end_time,
+                                               token.bought, token.sold, token.exit_reason)
                         else:
                             token.raw_amount -= token.raw_amount * 0.15  # 15% profit-taking strategy
                         return True
@@ -58,8 +62,10 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, se
                         balance_for_this_trade = token_balance - previous_balance  # amount we own - owned amount before this buy transaction
                         token.raw_amount = balance_for_this_trade
                         tracked_tokens.append(token)
-                        # more information about why we need this field in tracked_tokens module
-                        token.unix_timestamp = time.time()
+                        # more information about why we need this fields in tracked_tokens module
+                        timestamp = time.time()
+                        token.unix_timestamp = timestamp
+                        token.start_time = timestamp
                     return True
 
                 print(f"⚠️ Transaction {signature} failed, retrying...")
@@ -68,7 +74,7 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, se
                 print(f"❌ Error while sending transaction: {str(e)}")
 
     print("🚨 Max retries reached. Transaction failed.")
-    return None  # Failed after all retries
+    return False  # Failed after all retries
 
 
 async def confirm_transaction(connection, txid: str):

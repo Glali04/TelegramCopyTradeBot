@@ -1,0 +1,19 @@
+here i will save every command which i used through database creation
+
+creating a table
+    cursor.execute("""
+        CREATE TABLE finished_trades (
+            id INTEGER PRIMARY KEY,
+            user_id TEXT,       -- Track user performing the trade  *fetch_token_data -
+            token_address TEXT,                                     *fetch_token_data +
+            start_time TIMESTAMP,                                   *send_transaction +
+            end_time TIMESTAMP,                                     *fetch_token_price +
+            bought INTEGER,     -- In lamports                      *trade_execution +
+            sold INTEGER,       -- In lamports                      *trade_execution +
+            exit_reason TEXT    -- Reason for selling               *fetch_token_price +
+        )
+    """)
+
+cursor.
+
+*in which module we added value to this field in TrackedToken instance

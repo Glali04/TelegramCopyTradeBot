@@ -44,25 +44,32 @@ async def fetch_prices():
 async def check_prices(response):
     for token in tracked_tokens:
         token_price = response.get("data", {}).get(f"{token.base_address}", {}).get("value")
+        timestamp = time.time()
         # this means we reached 15% profit first time
         if token.ath_price is None and token_price >= token.buy_price * 1.15:
             # we set ath to current price and sell 15%
             token.ath_price = token_price
-            token.unix_timestamp = time.time()
+            token.unix_timestamp = timestamp
             await sell_token(token, sell_all=False)
-        # if current price is higher then saved ath we save new ath
+        # if current price is higher than saved ath we save new ath
         elif token.ath_price and token_price > token.ath_price:
             token.ath_price = token_price
-            token.unix_timestamp = time.time()
+            token.unix_timestamp = timestamp
         # if token fall 15% from ath we sell everything:
         elif token.ath_price and token_price <= token.ath_price * 0.85:
+            token.end_time = timestamp
+            token.exit_reason = "we reached ath then price dropped 15%, most likely sold in profit"
             await sell_token(token, sell_all=True)
         # if token dropped 10% from buy price we will sell everything (this will only trigger if we did not reach ath first)
         elif token_price <= token.buy_price * 0.9:
+            token.end_time = timestamp
+            token.exit_reason = "we sold in loss"
             await sell_token(token, sell_all=True)
         # unix_timestamp are time in seconds since epoch 1200 seconds is 20 minutes
-        elif token.unix_timestamp + 1200 <= time.time():
+        elif token.unix_timestamp + 1200 <= timestamp:
             # it means that price did not reach new ath for 20 minutes and did not price dropped more then 15% so we sell
             # it because it means the token is "inactive" and only uses our cu for and gives latency for our program
+            token.end_time = timestamp
+            token.exit_reason = "the price did not changed for to long"
             await sell_token(token, sell_all=True)
     return True

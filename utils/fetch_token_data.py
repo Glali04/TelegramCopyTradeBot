@@ -27,6 +27,7 @@ async def request_token_information(fetch_token_information: dict):
     # we checked the token if token has market cap in given range and is not listed on pump or moonshot, we will go
     # and buy it
     if token_to_buy is not None:
+
         buy_token(token_to_buy)
 
 

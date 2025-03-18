@@ -1,6 +1,6 @@
 # sending swap transaction to the solana blockchain
 # here we will sign and send the sell transaction
-import asyncio
+
 import base64
 import time
 from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed
@@ -10,12 +10,14 @@ from solders.signature import Signature
 from solana.rpc.types import TokenAccountOpts
 
 from utils.tracked_tokens import TrackedToken, tracked_tokens
-from solana_client import get_client, get_keypair
+from utils.solana.solana_client import get_client, get_keypair
 from database.commands import insert_query
 
 keypair = get_keypair()
 
+
 def build_and_sign_transaction(swap_transaction):
+    print(swap_transaction)
     transaction = VersionedTransaction.from_bytes(
         base64.decode(swap_transaction))  # first we convert to bytes then deserialize it
     print(transaction)
@@ -23,20 +25,22 @@ def build_and_sign_transaction(swap_transaction):
     return signed_tx
 
 
-async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, out_amount=None, sell_all=False, sell_transaction=False):
+async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, out_amount=None, sell_all=False,
+                                       sell_transaction=False):
     signed_tx = build_and_sign_transaction(swap_transaction)
     connection = get_client()
 
-    """few times, same time will be more trades for same token, if yes and i buy new token i want to just store the newly 
-    bought raw amount not everything when i fetch token account balance that way i will ensure in later sales that do not 
-    try to sell more token then what i have"""
+    """few times, same time will be more trades for same token, if yes and i buy new token i want to just store the 
+    newly bought raw amount not everything when i fetch token account balance that way i will ensure in later sales 
+    that do not try to sell more token then what i have"""
     previous_balance = calculate_old_token_balance(token.base_token)
 
     async for attempt in AsyncRetrying(stop=stop_after_attempt(5), wait=wait_fixed(1.0)):  # Retry up to 5 times
         with attempt:
             try:
                 print("🚀 Sending transaction...")
-                # node's rpc service receives the transaction, this method immediately succeeds, without waiting for any confirmations.
+                # node's rpc service receives the transaction, this method immediately succeeds, without waiting for
+                # any confirmations.
                 signature = await connection.send_raw_transaction(txn=bytes(signed_tx))
 
                 confirmed = await confirm_transaction(connection, signature)
@@ -49,9 +53,11 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, ou
                         # transaction is confirmed if we sold everything we will remove it from list else we will take 15% profit taking (strategy)
                         if sell_all:
                             tracked_tokens.remove(token)
+                            print("sold all")
                             await insert_query(token.user_id, token.base_token, token.start_time, token.end_time,
                                                token.bought, token.sold, token.exit_reason)
                         else:
+                            print("sold 15%")
                             token.raw_amount -= token.raw_amount * 0.15  # 15% profit-taking strategy
                         return True
 
@@ -59,7 +65,8 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, ou
                     token_balance = fetch_token_balance(connection, keypair.pubkey(), token.base_token)
 
                     if token_balance:
-                        balance_for_this_trade = token_balance - previous_balance  # amount we own - owned amount before this buy transaction
+                        balance_for_this_trade = token_balance - previous_balance  # amount we own - owned amount
+                        # before this buy transaction
                         token.raw_amount = balance_for_this_trade
                         tracked_tokens.append(token)
                         # more information about why we need this fields in tracked_tokens module
@@ -111,8 +118,8 @@ def calculate_old_token_balance(token_address):
     return previous_balance
 
 
-async def fetch_token_balance(connection, wallet_pubkey, token_address, retries=10):
-    async for attempt in AsyncRetrying(stop=stop_after_attempt(5), wait=wait_fixed(1.0)):  # Retry up to 5 times
+async def fetch_token_balance(connection, wallet_pubkey, token_address):
+    async for attempt in AsyncRetrying(stop=stop_after_attempt(15), wait=wait_fixed(1.0)):  # Retry up to 5 times
         with attempt:
             try:
                 # Get token account by owner
@@ -122,7 +129,8 @@ async def fetch_token_balance(connection, wallet_pubkey, token_address, retries=
                 )
                 token_account_information = response.get("result", {}).get("value")[0]
                 if response and token_account_information:
-                    # we will store tokens already in raw units(smallest units of token), that way we reduce computer units(reduce unnecessary conversions)
+                    # we will store tokens already in raw units(the smallest units of token), that way we reduce
+                    # computer units(reduce unnecessary conversions)
                     token_balance = token_account_information.get("account", {}).get("data", {}).get("parsed", {}).get(
                         "info", {}).get("tokenAmount", {}).get("amount")
                     print("raw token balance ", token_balance)

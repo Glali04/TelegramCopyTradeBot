@@ -1,7 +1,7 @@
 """
-i will make a client session for each server i connect my program, there will be 3 (dexscrenner, birdeye, jupiter)
-this sessions will live while my program is running that is more efficient then oppening new session for every request
-i made to servers.
+I will make a client session for each server I connect my program, there will be 3 (dexscrenner, birdeye, jupiter)
+this sessions will live while my program is running that is more efficient than opening new session for every request
+I made to servers.
 """
 import aiohttp
 import asyncio
@@ -13,7 +13,8 @@ class HTTPClient:
     def __init__(self):
         self.sessions = {}  # stores session for different servers
 
-#i added headers parameter, for Jupiter and dex i only need accept header but for birdeye i will need to add additional headers to be able to communicate with server
+    # I added headers' parameters, for Jupiter and dexscrenner there I only need "accept" header
+    # but for birdeye I will need to add additional headers to be able to communicate with server
     async def start_session(self, base_url, headers):
         """True if the session has been closed, False otherwise. if we call it on ClientSession"""
         if base_url not in self.sessions or self.sessions[base_url].closed:

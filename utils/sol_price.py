@@ -1,15 +1,17 @@
 import asyncio
-from client_sessions_to_servers import http_client
+from utils.client_sessions_to_servers import http_client
 
 sol_price = None  # Global variable to store latest SOL price
 wsol_address = "So11111111111111111111111111111111111111112"
+
 
 async def fetch_sol_price():
     global sol_price  # Use global variable
     base_url = "https://api.jup.ag"
     endpoint = f"price/v2?ids={wsol_address}"
-    data = http_client.fetch(base_url, endpoint)
+    data = await http_client.fetch(base_url, endpoint)
     sol_price = float(data.get("data", {}).get(f"{wsol_address}", {}).get("price"))
+    print("new sol price was set ", sol_price)
 
 
 # price fetching loop in the background
@@ -22,7 +24,8 @@ async def sol_price_loop():
 # When another function tries to access sol_price, this function ensures that it waits until sol_price_loop() updates it
 # if sol_price has already been fetched, it returns immediately
 async def get_sol_price():
+    global sol_price  # Explicitly reference the global variable
     while sol_price is None:
-        print("Waitting for SOL price update")
+        print("Waiting for SOL price update")
         await asyncio.sleep(1)
     return sol_price

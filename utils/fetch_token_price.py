@@ -1,10 +1,10 @@
 # here we will track prices for open_trades once trade is finished we will log it to database for future analyses
 import time
 
-from tracked_tokens import tracked_tokens
+from utils.tracked_tokens import tracked_tokens
 from asyncio import sleep
-from client_sessions_to_servers import http_client
-from trade_execution import sell_token
+from utils.client_sessions_to_servers import http_client
+from utils.trade_execution import sell_token
 
 base_url = "https://public-api.birdeye.so"
 headers = {
@@ -22,7 +22,7 @@ async def track_token_prices():
             if response.get("success"):
                 check_prices(response)
                 print("successfully checked token prices")
-        sleep(1)
+        await sleep(1)
 
 
 async def fetch_prices():
@@ -37,33 +37,41 @@ async def fetch_prices():
     """removes the last character(the last char will be coma this is the easiest way to remove it), other ways we
     can not surely know when we added the last token to endpoint"""
     endpoint = endpoint[:-1]
+    print(f"fetching prices for: {list_of_active_trade_addresses} with endpoint: {endpoint}")
     response = await http_client.fetch(base_url, endpoint, headers=headers)
-    return response, list_of_active_trade_addresses
+    return response
 
 
 async def check_prices(response):
     for token in tracked_tokens:
         token_price = response.get("data", {}).get(f"{token.base_address}", {}).get("value")
         timestamp = time.time()
+        if token_price is None:
+            token_price.buy_price = token_price
+            print("buy_price was set!", token.base_address)
         # this means we reached 15% profit first time
-        if token.ath_price is None and token_price >= token.buy_price * 1.15:
+        elif token.ath_price is None and token_price >= token.buy_price * 1.15:
             # we set ath to current price and sell 15%
             token.ath_price = token_price
             token.unix_timestamp = timestamp
+            print("reached 15% profit, selling 15%", token.base_address)
             await sell_token(token, sell_all=False)
         # if current price is higher than saved ath we save new ath
         elif token.ath_price and token_price > token.ath_price:
             token.ath_price = token_price
             token.unix_timestamp = timestamp
+            print("new ath for the token ", token.base_address)
         # if token fall 15% from ath we sell everything:
         elif token.ath_price and token_price <= token.ath_price * 0.85:
             token.end_time = timestamp
             token.exit_reason = "we reached ath then price dropped 15%, most likely sold in profit"
+            print("token price dropped 15% selling all", token.base_address)
             await sell_token(token, sell_all=True)
         # if token dropped 10% from buy price we will sell everything (this will only trigger if we did not reach ath first)
         elif token_price <= token.buy_price * 0.9:
             token.end_time = timestamp
             token.exit_reason = "we sold in loss"
+            print("sold in loss", token.base_address)
             await sell_token(token, sell_all=True)
         # unix_timestamp are time in seconds since epoch 1200 seconds is 20 minutes
         elif token.unix_timestamp + 1200 <= timestamp:
@@ -71,5 +79,5 @@ async def check_prices(response):
             # it because it means the token is "inactive" and only uses our cu for and gives latency for our program
             token.end_time = timestamp
             token.exit_reason = "the price did not changed for to long"
+            print("token was to long inactive selling all", token.base_address)
             await sell_token(token, sell_all=True)
-    return True

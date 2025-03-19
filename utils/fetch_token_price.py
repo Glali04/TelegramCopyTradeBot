@@ -18,11 +18,27 @@ async def track_token_prices():
     while True:
         # first we look do we have active trade
         if len(tracked_tokens) > 0:
-            response = fetch_prices()
+            response = fetch_prices_single_token()
             if response.get("success"):
                 check_prices(response)
                 print("successfully checked token prices")
         await sleep(1)
+
+
+async def fetch_prices_single_token():
+    # every time we fetch active trades we will reset list and endpoint
+    endpoint = "defi/price?address="
+    list_of_active_trade_addresses = []
+    for token in tracked_tokens:
+        token_address = token.base_address
+        if token_address not in list_of_active_trade_addresses:
+            list_of_active_trade_addresses.append(token_address)
+            endpoint += f"{token_address},"
+    """removes the last character(the last char will be coma this is the easiest way to remove it), other ways we
+    can not surely know when we added the last token to endpoint"""
+    print(f"fetching prices for: {list_of_active_trade_addresses} with endpoint: {endpoint}")
+    response = await http_client.fetch(base_url, endpoint, headers=headers)
+    return response
 
 
 async def fetch_prices():
@@ -54,7 +70,7 @@ async def check_prices(response):
             # we set ath to current price and sell 15%
             token.ath_price = token_price
             token.unix_timestamp = timestamp
-            print("reached 15% profit, selling 15%", token.base_address)
+            print("reached 15% profit, selling 25%", token.base_address)
             await sell_token(token, sell_all=False)
         # if current price is higher than saved ath we save new ath
         elif token.ath_price and token_price > token.ath_price:
@@ -68,7 +84,7 @@ async def check_prices(response):
             print("token price dropped 15% selling all", token.base_address)
             await sell_token(token, sell_all=True)
         # if token dropped 10% from buy price we will sell everything (this will only trigger if we did not reach ath first)
-        elif token_price <= token.buy_price * 0.9:
+        elif token_price <= token.buy_price * 0.85:
             token.end_time = timestamp
             token.exit_reason = "we sold in loss"
             print("sold in loss", token.base_address)

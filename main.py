@@ -9,16 +9,13 @@ import asyncio
 import atexit
 
 
-async def main():
-    await set_up_async_client_for_solana_rpc()
-
-
 if __name__ == "__main__":
     atexit.register(http_client.close)
     try:
         print("🚀 Starting userbot...")
         # background tasks tracking open trade prices and fetching solana price
         loop = asyncio.get_event_loop()
+        loop.run_until_complete(set_up_async_client_for_solana_rpc())
         loop.create_task(sol_price.sol_price_loop())
         loop.create_task(fetch_token_price.track_token_prices())
         app.run()  # Starting the event loop

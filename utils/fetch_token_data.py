@@ -44,7 +44,7 @@ def parse_by_pair_id(pair_id, data):
     dex_id = token_info.get("dexId")
 
     print("token was found via dex")
-    if (market_cap and 10_000 < market_cap < 5_000_000) and (dex_id not in ["confirmed", "finalized"]):
+    if (market_cap and 25_000 < market_cap < 5_000_000) and (dex_id not in ["pumpfun", "moonshot"]):
         print("market cap was right", market_cap)
         return TrackedToken(token_info.get("baseToken", {}).get("address"))
     print(f"market cap is too high/low, pairId: {pair_id}, occurred: {datetime.now()}")
@@ -61,7 +61,7 @@ def parse_by_token_address(token_address, data):
     market_cap = token_info.get("marketCap")
     dex_id = token_info.get("dexId")
 
-    if (market_cap and 10_000 < market_cap < 5_000_000) and (dex_id not in ["confirmed", "finalized"]):
+    if (market_cap and 25_000 < market_cap < 5_000_000) and (dex_id not in ["pumpfun", "moonshot"]):
         print("market cap was right", market_cap)
         return TrackedToken(token_address)
     print(f"market cap is too high/low, pairId: {token_address}, occurred: {datetime.now()}")

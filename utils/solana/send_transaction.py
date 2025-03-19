@@ -17,18 +17,16 @@ keypair = get_keypair()
 
 
 def build_and_sign_transaction(swap_transaction):
-    print(swap_transaction)
-    transaction = VersionedTransaction.from_bytes(
-        base64.decode(swap_transaction))  # first we convert to bytes then deserialize it
-    print(transaction)
+    # first we convert base64-encoded string to bytes then deserialize it
+    transaction = VersionedTransaction.from_bytes(base64.b64decode(swap_transaction))
     signed_tx = VersionedTransaction.populate(transaction.message, [keypair.sign_message(bytes(transaction.message))])
     return signed_tx
 
 
-async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, out_amount=None, sell_all=False,
-                                       sell_transaction=False):
+async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, sell_transaction=False,
+                                       sell_all=False, out_amount=None):
     signed_tx = build_and_sign_transaction(swap_transaction)
-    connection = get_client()
+    connection = await get_client()
 
     """few times, same time will be more trades for same token, if yes and i buy new token i want to just store the 
     newly bought raw amount not everything when i fetch token account balance that way i will ensure in later sales 
@@ -50,7 +48,8 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, ou
                     # we will look at does the transaction is sell or buy transaction
                     if sell_transaction:
                         token.sold += out_amount
-                        # transaction is confirmed if we sold everything we will remove it from list else we will take 15% profit taking (strategy)
+                        # transaction is confirmed if we sold everything we will remove it from list else we will
+                        # take 15% profit taking (strategy)
                         if sell_all:
                             tracked_tokens.remove(token)
                             print("sold all")
@@ -58,12 +57,12 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, ou
                                                token.bought, token.sold, token.exit_reason)
                         else:
                             print("sold 15%")
-                            token.raw_amount -= token.raw_amount * 0.15  # 15% profit-taking strategy
+                            token.raw_amount -= token.raw_amount * 0.25  # 25% profit-taking strategy
                         return True
 
                     # if we bought given token we will need to add it to tracked tokens
                     token_balance = fetch_token_balance(connection, keypair.pubkey(), token.base_token)
-
+                    print("token bought successfully")
                     if token_balance:
                         balance_for_this_trade = token_balance - previous_balance  # amount we own - owned amount
                         # before this buy transaction
@@ -71,11 +70,13 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, ou
                         tracked_tokens.append(token)
                         # more information about why we need this fields in tracked_tokens module
                         timestamp = time.time()
+                        # with this we track does the token still actively traded
                         token.unix_timestamp = timestamp
+                        # goes in database
                         token.start_time = timestamp
                     return True
 
-                print(f"⚠️ Transaction {signature} failed, retrying...")
+                raise Exception(f"⚠️ Transaction {signature} failed, retrying...")
 
             except Exception as e:
                 print(f"❌ Error while sending transaction: {str(e)}")
@@ -98,6 +99,7 @@ async def confirm_transaction(connection, txid: str):
                     if status.get("err") is not None:
                         print(f"❌ Transaction {txid} failed with error: {status.get('err')}")
                         return False
+                raise Exception("the tx is not confirmed yet and no error occured, trying again")
             except Exception as e:
                 print(f"❌ Error while confirming transaction: {str(e)}")
 
@@ -136,8 +138,7 @@ async def fetch_token_balance(connection, wallet_pubkey, token_address):
                     print("raw token balance ", token_balance)
                     return token_balance
                 else:
-                    print("⚠️ No token account found. Retrying...")
-
+                    raise Exception("⚠️ No token account found. Retrying...")
             except Exception as e:
                 print(f"❌ Error fetching balance: {e}. Retrying...")
 

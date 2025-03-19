@@ -1,7 +1,5 @@
 import json
-
 from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed
-import aiohttp
 
 from utils.client_sessions_to_servers import http_client
 from utils.sol_price import get_sol_price

@@ -50,9 +50,11 @@ class HTTPClient:
 
                 except aiohttp.ClientConnectionError:
                     print(f"Network error! {error_information}")
+                    raise
 
                 except aiohttp.ClientTimeout:
                     print(f"API took too long! {error_information}")
+                    raise
 
                 except aiohttp.ClientResponseError as e:
                     if e.status == 429:  # Rate Limited
@@ -60,6 +62,7 @@ class HTTPClient:
                         await asyncio.sleep(1)  # Non-blocking sleep
                     elif e.status >= 500:  # Server Errors
                         print(f"Server error! {error_information}")
+                    raise
         # If all retry attempts fail, return None
         return None
 

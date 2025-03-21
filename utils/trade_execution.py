@@ -1,9 +1,10 @@
+import asyncio
 import json
 from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed
 
 from utils.client_sessions_to_servers import http_client
 from utils.sol_price import get_sol_price
-from utils.solana.send_transaction import send_and_confirm_transaction, keypair
+from utils.solana_utils.send_transaction import send_and_confirm_transaction, keypair
 from utils.tracked_tokens import TrackedToken
 
 # we will separate this module to two parts one for buying given token second to sell given token
@@ -110,6 +111,6 @@ async def swap_api(endpoint, quote):
 def get_raw_amount_of_sol(sol_price):
     amount_in_sol = buy_in / sol_price  # (e.x 0.8 = 100 / 124)
     # now we need to convert it to integers (because on the blockchain, token amounts are stored as integers(not
-    # decimals), solana has 9 decimals)
+    # decimals), solana_utils has 9 decimals)
     raw_amount = int(amount_in_sol * 10 ** 9)  # 9 is decimals what wsol support
     return raw_amount

@@ -9,7 +9,7 @@ from utils.trade_execution import sell_token
 base_url = "https://public-api.birdeye.so"
 headers = {
     "Accept": "application/json",
-    "x-chain": "solana",
+    "x-chain": "solana_utils",
     "X-API-KEY": "7f7741539b5f480680daecaf6fe7d1f1"
 }
 

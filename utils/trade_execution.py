@@ -6,14 +6,14 @@ from utils.client_sessions_to_servers import http_client
 from utils.sol_price import get_sol_price
 from utils.solana_utils.send_transaction import send_and_confirm_transaction, keypair
 from utils.tracked_tokens import TrackedToken
-
+from config.settings import BUY_AMOUNT_IN_US_DOLLAR
 # we will separate this module to two parts one for buying given token second to sell given token
 
 # first we need to queue a swap then get swap transaction via jupiter api after that we need to send it to blockchain
 
 # amount we need put in without decimals "raw/integer" format
 
-buy_in = 1.00  # we want to buy every token with this amount of $
+buy_in = float(BUY_AMOUNT_IN_US_DOLLAR)  # we want to buy every token with this amount of $
 
 wallet_public_key = keypair.pubkey()
 base_url = "https://api.jup.ag"
@@ -22,21 +22,14 @@ print(wallet_public_key)
 
 async def buy_token(token_to_buy: TrackedToken):
     sol_price = await get_sol_price()  # we will get sol price in $
-    print("sol price", sol_price)
     raw_amount_sol = get_raw_amount_of_sol(sol_price)
-    print("raw amount of sol", raw_amount_sol)
-    print(token_to_buy.base_token)
-    print(token_to_buy.quote_token)
     endpoint_for_quote = f"swap/v1/quote?inputMint={token_to_buy.quote_token}&outputMint={token_to_buy.base_token}" \
                          f"&amount={raw_amount_sol}" \
                          f"&slippageBps=1000&restrictIntermediateTokens=true&maxAccounts=64"
     quote = await quote_api(endpoint_for_quote)
-    print(quote)
     if quote:
         endpoint_for_swap = f"swap/v1/swap"
         swap = await swap_api(endpoint_for_swap, quote)
-        print("this is what i get from swap")
-        print(swap)
         if swap:
             token_to_buy.bought = raw_amount_sol
             result = await send_and_confirm_transaction(swap.get("swapTransaction"),
@@ -45,7 +38,7 @@ async def buy_token(token_to_buy: TrackedToken):
             if result:
                 print(f"successfully bought the token: {token_to_buy.base_token}")
             else:
-                print(f"error occurred while selling the token: {token_to_buy.base_token}")
+                print(f"error occurred while buying the token: {token_to_buy.base_token}")
 
 
 async def sell_token(token_to_sell: TrackedToken, sell_all: bool):
@@ -55,7 +48,7 @@ async def sell_token(token_to_sell: TrackedToken, sell_all: bool):
         sell_amount = token_to_sell.raw_amount * 0.25
 
     endpoint_for_quote = f"swap/v1/quote?inputMint={token_to_sell.base_token}&outputMint={token_to_sell.quote_token}" \
-                         f"&amount={sell_amount}" \
+                         f"&amount={int(sell_amount)}" \
                          f"&slippageBps=1000&restrictIntermediateTokens=true&maxAccounts=64"
     quote = await quote_api(endpoint_for_quote)
     if quote:
@@ -76,7 +69,6 @@ async def quote_api(endpoint):
         with attempt:
             quote = await http_client.fetch(base_url, endpoint)
             if isinstance(quote, dict) and len(quote) > 0:
-                print("successfully get quote")
                 return quote
             else:
                 raise Exception("data is not provided in quote")
@@ -101,7 +93,6 @@ async def swap_api(endpoint, quote):
             print(data)
             swap = await http_client.fetch(base_url, endpoint, swap_endpoint=True, data=data)
             if isinstance(swap, dict) and len(swap) > 0:
-                print("successfully get swap")
                 return swap
             else:
                 raise Exception("data is not provided in swap")

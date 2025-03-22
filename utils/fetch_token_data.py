@@ -14,7 +14,6 @@ async def request_token_information(fetch_token_information: dict, user_id: int)
     # either we will open a client session or we use an already created to this server
     base_url = "https://api.dexscreener.com"
 
-    token_to_buy = None
     if fetch_token_information["source"] == "DexScreener":
         pair_id = fetch_token_information["pair_id"]
         endpoint = f"latest/dex/pairs/solana/{pair_id}"
@@ -30,7 +29,6 @@ async def request_token_information(fetch_token_information: dict, user_id: int)
     # and buy it
     if token_to_buy:
         token_to_buy.user_id = user_id
-        print("after fetchin token data tracked token looks like this ", token_to_buy)
         await buy_token(token_to_buy)
 
 

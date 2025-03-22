@@ -6,9 +6,7 @@ import asyncio
 # it will fetch messages from caller groups, via TCP socket, if message is sent in group we will get it immediately
 @app.on_message()
 async def callers_messages(client, message):
-    print(message)
     token_to_buy = regex.extract_token_address(message.text)
-    print(token_to_buy)
     # if ca/pairid was found, we are going to fetch information about the token
     if token_to_buy:
         user_id = message.from_user.id

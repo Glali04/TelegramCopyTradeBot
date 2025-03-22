@@ -32,7 +32,7 @@ class HTTPClient:
 
         error_information = f"Occurred: {datetime.now()}, on server: {base_url}/{endpoint}"
 
-        async for attempt in AsyncRetrying(stop=stop_after_attempt(5), wait=wait_fixed(1.0)):
+        async for attempt in AsyncRetrying(stop=stop_after_attempt(10), wait=wait_fixed(1.0)):
             with attempt:
                 try:
                     if not swap_endpoint:

@@ -5,7 +5,7 @@ import re
 # other blockchains is not that active to worth looking them)
 def extract_token_address(text: str):
     # Regex pattern for check if in the text provided a dex URL
-    dexscreener_pattern = r"https://dexscreener\.com/solana_utils/([1-9A-HJ-NP-Za-z]+)"
+    dexscreener_pattern = r"https://dexscreener\.com/solana/([1-9A-HJ-NP-Za-z]+)"
 
     general_token_address_pattern = r"\b[1-9A-HJ-NP-Za-z]{32,44}$\b"
 

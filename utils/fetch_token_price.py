@@ -18,57 +18,11 @@ async def track_token_prices():
     while True:
         # first we look do we have active trade
         if len(tracked_tokens) > 0:
-            response = await fetch_prices_single_token()
+            response = await fetch_prices()
             if response.get("success"):
-                await check_prices_single_token(response.get("data", {}).get("value"))
+                await check_prices(response)
         await sleep(1)
 
-
-async def fetch_prices_single_token():
-    # every time we fetch active trades we will reset list and endpoint
-    endpoint = "defi/price?address="
-    list_of_active_trade_addresses = []
-    for token in tracked_tokens:
-        token_address = token.base_token
-        endpoint += f"{token_address}"
-        response = await http_client.fetch(base_url, endpoint, headers=headers)
-    return response
-
-async def check_prices_single_token(value):
-    for token in tracked_tokens:
-        timestamp = time.time()
-        # this means we reached 15% profit first time
-        if token.ath_price is None and value >= token.buy_price * 1.15:
-            # we set ath to current price and sell 15%
-            token.ath_price = value
-            token.unix_timestamp = timestamp
-            print("reached 15% profit, selling 25%", token.base_token)
-            await sell_token(token, sell_all=False)
-        # if current price is higher than saved ath we save new ath
-        elif token.ath_price and value > token.ath_price:
-            token.ath_price = value
-            token.unix_timestamp = timestamp
-            print("new ath for the token ", token.base_token)
-        # if token fall 15% from ath we sell everything:
-        elif token.ath_price and value <= token.ath_price * 0.85:
-            token.end_time = timestamp
-            token.exit_reason = "we reached ath then price dropped 15%, most likely sold in profit"
-            print("token price dropped 15% selling all", token.base_token)
-            await sell_token(token, sell_all=True)
-        # if token dropped 10% from buy price we will sell everything (this will only trigger if we did not reach ath first)
-        elif value <= token.buy_price * 0.85:
-            token.end_time = timestamp
-            token.exit_reason = "we sold in loss"
-            print("sold in loss", token.base_token)
-            await sell_token(token, sell_all=True)
-        # unix_timestamp are time in seconds since epoch 1200 seconds is 20 minutes
-        elif token.unix_timestamp + 1200 <= timestamp:
-            # it means that price did not reach new ath for 20 minutes and did not price dropped more then 15% so we sell
-            # it because it means the token is "inactive" and only uses our cu for and gives latency for our program
-            token.end_time = timestamp
-            token.exit_reason = "the price did not changed for to long"
-            print("token was to long inactive selling all", token.base_token)
-            await sell_token(token, sell_all=True)
 async def fetch_prices():
     # every time we fetch active trades we will reset list and endpoint
     endpoint = "defi/multi_price?list_address="
@@ -124,3 +78,4 @@ async def check_prices(response):
             token.exit_reason = "the price did not changed for to long"
             print("token was to long inactive selling all", token.base_token)
             await sell_token(token, sell_all=True)
+        print(f"{token.base_token}, {token.buy_price}, {token_price}")

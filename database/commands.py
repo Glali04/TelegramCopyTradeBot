@@ -6,7 +6,7 @@ import aiosqlite
 
 async def insert_query(user_id: str, token_address: str, start_time: float, end_time: float, bought: int, sold: int,
                        exit_reason: str):
-    async with aiosqlite.connect("finished_trades.db") as database:
+    async with aiosqlite.connect("database/finished_trades.db") as database:
         # in aiosqlite you do not need to create cursors explicitly, execute() internally creates and manages the cursor
         # for you only need a cursor when fetching results
         await database.execute("""

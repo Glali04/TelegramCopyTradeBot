@@ -90,7 +90,6 @@ async def swap_api(endpoint, quote):
     })
     async for attempt in AsyncRetrying(stop=stop_after_attempt(2), wait=wait_fixed(1.0)):
         with attempt:
-            print(data)
             swap = await http_client.fetch(base_url, endpoint, swap_endpoint=True, data=data)
             if isinstance(swap, dict) and len(swap) > 0:
                 return swap

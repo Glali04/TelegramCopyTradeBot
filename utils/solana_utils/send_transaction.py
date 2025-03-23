@@ -156,19 +156,19 @@ async def fetch_balance_for_trade_from_transaction(connection, txid, token, wall
                 for entry in pre_balances:
                     if str(entry.mint) == token.base_token and entry.owner == wallet_pubkey:
                         pre_balance = int(entry.ui_token_amount.amount)  # Raw units
-                        decimals = int(entry.ui_token_amount.decimals)
                         print(f"Pre-balance: {pre_balance}")
 
                 for entry in post_balances:
                     if str(entry.mint) == token.base_token and entry.owner == wallet_pubkey:
                         post_balance = int(entry.ui_token_amount.amount)
-                        print(f"Post-balance: {post_balance}")
+                        decimals = int(entry.ui_token_amount.decimals)
+                        print(f"Post-balance: {post_balance}, decimals: {decimals}")
 
                 token_received = post_balance - pre_balance
                 bought_with = float(BUY_AMOUNT_IN_US_DOLLAR)
                 token.buy_price = float(bought_with / (token_received / (10 ** decimals)))
                 print(f"Token balance change: {token_received} raw units")
-                print(token.buy_price)
+                print(f"buy price {token.buy_price}")
 
                 return token_received
 
@@ -177,5 +177,5 @@ async def fetch_balance_for_trade_from_transaction(connection, txid, token, wall
                 print(f"❌ Error fetching balance from txid {txid}: {e}. {attempt_counter} attempt Retrying...")
                 raise
 
-        print("⛔ Failed to fetch balance after retries.")
-        return None
+    print("⛔ Failed to fetch balance after retries.")
+    return None

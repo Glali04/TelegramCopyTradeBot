@@ -13,7 +13,6 @@ pair id"""
 async def request_token_information(fetch_token_information: dict, user_id: int):
     # either we will open a client session or we use an already created to this server
     base_url = "https://api.dexscreener.com"
-
     if fetch_token_information["source"] == "DexScreener":
         pair_id = fetch_token_information["pair_id"]
         endpoint = f"latest/dex/pairs/solana/{pair_id}"

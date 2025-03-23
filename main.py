@@ -5,6 +5,8 @@ from handlers.client import app
 from utils.client_sessions_to_servers import http_client
 from utils.solana_utils.solana_client import set_up_async_client_for_solana_rpc
 import handlers.message_handler  # Import so the decorators register
+from config.cpu_and_ram_monitoring import monitor_resources
+from handlers.message_handler import process_messages
 import asyncio
 import atexit
 
@@ -17,7 +19,9 @@ if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(set_up_async_client_for_solana_rpc())
         loop.create_task(sol_price.sol_price_loop())
+        loop.create_task(process_messages())
         loop.create_task(fetch_token_price.track_token_prices())
+        #loop.create_task(monitor_resources())
         app.run()  # Starting the event loop
     finally:
         print("shut down the userbot")

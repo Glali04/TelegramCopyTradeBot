@@ -1,0 +1,31 @@
+import asyncio
+
+import aiosqlite
+import pandas as pd
+
+
+async def fetch_trades(blockchain, start_time, end_time):
+    async with aiosqlite.connect("finished_trades.db") as database:
+        table = blockchain + "_finished_trades"
+        query = f"""
+        SELECT
+            COUNT(*) AS total_trades,
+            SUM(CASE WHEN exit_reason = 'we reached ath then price dropped 15%, most likely sold in profit'
+            THEN 1 ELSE 0 END) AS profitable_trades,
+            SUM(CASE WHEN exit_reason = 'we sold in loss' THEN 1 ELSE 0 END) AS losing_trades,
+            SUM(CASE when sold > bought THEN 1 ELSE 0 END) AS sold_in_profit,
+            SUM(bought) AS that_day_bought_for,
+            SUM(sold) AS that_day_sold_for,
+            MIN(sold) AS most_lose,
+            MAX(sold) AS most_gain
+        FROM {table}
+        WHERE start_time >= {start_time}
+        AND start_time <= {end_time}
+        """
+        async with database.execute(query) as cursor:
+            row = await cursor.fetchone() # results of query in one row
+            columns = [desc[0] for desc in cursor.description]  # get the metadata (which column we get in query)
+            return dict(zip(columns, row))  # convert to dictionary
+
+
+#asyncio.run(fetch_trades("solana", 1743458400.0, 1743544800000.0))

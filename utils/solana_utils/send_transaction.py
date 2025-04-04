@@ -12,9 +12,9 @@ from solders.pubkey import Pubkey
 from solders.transaction_status import TransactionStatus, TransactionConfirmationStatus
 from solana.rpc.types import TokenAccountOpts
 
-from utils.tracked_tokens import TrackedToken, tracked_tokens
+from utils.tracked_tokens import TrackedToken, solana_tracked_tokens
 from utils.solana_utils.solana_client import get_client, get_keypair
-from database.commands import insert_query
+from database.commands import save_trade
 from config.settings import BUY_AMOUNT_IN_US_DOLLAR
 
 keypair = get_keypair()
@@ -38,7 +38,7 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, se
     that do not try to sell more token then what i have"""
 
     attempt_counter = 0
-    async for attempt in AsyncRetrying(stop=stop_after_attempt(1), wait=wait_fixed(1)):  # Retry up to 5 times
+    async for attempt in AsyncRetrying(stop=stop_after_attempt(1), wait=wait_fixed(1)):  # Retry up to 2 times
         with attempt:
             try:
                 attempt_counter += 1
@@ -57,17 +57,17 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, se
                     if sell_transaction:
                         token.sold += out_amount
                         print(token.sold)
-                        print(token.user_id)
+                        print(token.user_name)
                         # transaction is confirmed if we sold everything we will remove it from list else we will
                         # take 15% profit taking (strategy)
                         if sell_all:
-                            tracked_tokens.remove(token)
+                            solana_tracked_tokens.remove(token)
                             print("sold all")
-                            await insert_query(token.user_id, token.base_token, token.start_time, token.end_time,
-                                               token.bought, token.sold, token.exit_reason)
+                            await save_trade(token.user_name, token.base_token, token.start_time, token.end_time,
+                                             token.bought, token.sold, token.exit_reason)
                         else:
                             print("sold 25%")
-                            token.raw_amount -= token.raw_amount * 0.25  # 25% profit-taking strategy
+                            token.raw_amount -= int(token.raw_amount * 0.25)  # 25% profit-taking strategy
                         print("token sold")
                         return True
 
@@ -79,7 +79,7 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, se
                         # the raw balance of token we bought with this trade
                         token.raw_amount = token_balance
                         # if we bought given token we will need to add it to tracked tokens
-                        tracked_tokens.append(token)
+                        solana_tracked_tokens.append(token)
                         # more information about why we need this fields in tracked_tokens module
                         timestamp = time.time()
                         # with this we track does the token still actively traded
@@ -93,7 +93,7 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, se
 
             except Exception as e:
                 print(f"❌ Error while sending transaction (attempt {attempt_counter}): {str(e)}")
-                raise  # 🚨 Ensure the exception is raised so Tenacity retries
+                # 🚨 Ensure the exception is raised so Tenacity retries
 
     print(f"🚨 Max retries reached. Transaction failed.{attempt_counter} attempts")
     return False  # Failed after all retries
@@ -101,7 +101,7 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, se
 
 async def confirm_transaction(connection, txid):
     attempt_counter = 0
-    async for attempt in AsyncRetrying(stop=stop_after_attempt(15), wait=wait_fixed(1)):  # Retry up to 15 times
+    async for attempt in AsyncRetrying(stop=stop_after_attempt(20), wait=wait_fixed(1)):  # Retry up to 20 times
         with attempt:
             try:
                 attempt_counter += 1

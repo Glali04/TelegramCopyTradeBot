@@ -1,7 +1,7 @@
 #this can extract ca from every blockhian
 def extract_token_address(text):
     # Regex pattern for check if in the text provided a dex URL
-    dexscreener_pattern = r"https://dexscreener\.com/([A-Za-z]+)/([A-Za-z0-9]+)"
+    dexscreener_pattern = r"https://dexscreener\.com/([AZa-z]+)/([A-Za-z0-9]+)"
 
     # Regex pattern for check if we have a token address in text
     general_token_address_pattern = r"\b([A-Za-z0-9]{32,66})\b"

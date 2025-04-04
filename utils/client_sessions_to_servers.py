@@ -13,21 +13,14 @@ class HTTPClient:
     def __init__(self):
         self.sessions = {}  # stores session for different servers
 
-    # I added headers' parameters, for Jupiter and dexscrenner there I only need "accept" header
-    # but for birdeye I will need to add additional headers to be able to communicate with server
-    async def start_session(self, base_url, headers):
+    async def start_session(self, base_url):
         """True if the session has been closed, False otherwise. if we call it on ClientSession"""
         if base_url not in self.sessions or self.sessions[base_url].closed:
-            if headers is None:
-                headers = {
-                    'Accept': 'application/json'
-                }
-            self.sessions[base_url] = aiohttp.ClientSession(base_url=base_url, timeout=aiohttp.ClientTimeout(1),
-                                                            headers=headers)
+            self.sessions[base_url] = aiohttp.ClientSession(base_url=base_url, timeout=aiohttp.ClientTimeout(1))
 
     async def fetch(self, base_url, endpoint, headers=None, params=None, data=None, swap_endpoint=False):
         """Fetch data from API with retries and error handling."""
-        await self.start_session(base_url, headers)
+        await self.start_session(base_url)
         session = self.sessions[base_url]
 
         error_information = f"Occurred: {datetime.now()}, on server: {base_url}/{endpoint}"
@@ -36,7 +29,11 @@ class HTTPClient:
             with attempt:
                 try:
                     if not swap_endpoint:
-                        async with session.get(f"/{endpoint}", params=params) as response:
+                        if headers is None:
+                            headers = {
+                                'Accept': 'application/json'
+                            }
+                        async with session.get(f"/{endpoint}", params=params, headers=headers) as response:
                             response.raise_for_status()
                             return await response.json()
                     else:

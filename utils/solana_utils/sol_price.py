@@ -1,16 +1,16 @@
 import asyncio
 from utils.client_sessions_to_servers import http_client
+from config.settings import WSOL_ADDRESS
 
 sol_price = None  # Global variable to store latest SOL price
-wsol_address = "So11111111111111111111111111111111111111112"
 
 
 async def fetch_sol_price():
     global sol_price  # Use global variable
     base_url = "https://api.jup.ag"
-    endpoint = f"price/v2?ids={wsol_address}"
+    endpoint = f"price/v2?ids={WSOL_ADDRESS}"
     data = await http_client.fetch(base_url, endpoint)
-    sol_price = float(data.get("data", {}).get(f"{wsol_address}", {}).get("price"))
+    sol_price = float(data.get("data", {}).get(f"{WSOL_ADDRESS}", {}).get("price"))
     print("new sol price was set ", sol_price)
 
 

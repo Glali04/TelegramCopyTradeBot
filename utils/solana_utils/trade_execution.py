@@ -1,9 +1,8 @@
-import asyncio
 import json
 from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed
 
 from utils.client_sessions_to_servers import http_client
-from utils.sol_price import get_sol_price
+from utils.solana_utils.sol_price import get_sol_price
 from utils.solana_utils.send_transaction import send_and_confirm_transaction, keypair
 from utils.tracked_tokens import TrackedToken
 from config.settings import BUY_AMOUNT_IN_US_DOLLAR
@@ -12,8 +11,6 @@ from config.settings import BUY_AMOUNT_IN_US_DOLLAR
 # first we need to queue a swap then get swap transaction via jupiter api after that we need to send it to blockchain
 
 # amount we need put in without decimals "raw/integer" format
-
-buy_in = float(BUY_AMOUNT_IN_US_DOLLAR)  # we want to buy every token with this amount of $
 
 wallet_public_key = keypair.pubkey()
 base_url = "https://api.jup.ag"
@@ -25,7 +22,7 @@ async def buy_token(token_to_buy: TrackedToken):
     raw_amount_sol = get_raw_amount_of_sol(sol_price)
     endpoint_for_quote = f"swap/v1/quote?inputMint={token_to_buy.quote_token}&outputMint={token_to_buy.base_token}" \
                          f"&amount={raw_amount_sol}" \
-                         f"&slippageBps=1000&restrictIntermediateTokens=true&maxAccounts=64"
+                         f"&slippageBps=2000&restrictIntermediateTokens=true&maxAccounts=64"
     quote = await quote_api(endpoint_for_quote)
     if quote:
         endpoint_for_swap = f"swap/v1/swap"
@@ -49,7 +46,7 @@ async def sell_token(token_to_sell: TrackedToken, sell_all: bool):
 
     endpoint_for_quote = f"swap/v1/quote?inputMint={token_to_sell.base_token}&outputMint={token_to_sell.quote_token}" \
                          f"&amount={int(sell_amount)}" \
-                         f"&slippageBps=1000&restrictIntermediateTokens=true&maxAccounts=64"
+                         f"&slippageBps=2000&restrictIntermediateTokens=true&maxAccounts=64"
     quote = await quote_api(endpoint_for_quote)
     if quote:
         endpoint_for_swap = f"swap/v1/swap"
@@ -99,7 +96,8 @@ async def swap_api(endpoint, quote):
 
 
 def get_raw_amount_of_sol(sol_price):
-    amount_in_sol = buy_in / sol_price  # (e.x 0.8 = 100 / 124)
+    # we want to buy every token with this amount of $
+    amount_in_sol = float(BUY_AMOUNT_IN_US_DOLLAR) / sol_price  # (e.x 0.8 = 100 / 124)
     # now we need to convert it to integers (because on the blockchain, token amounts are stored as integers(not
     # decimals), solana_utils has 9 decimals)
     raw_amount = int(amount_in_sol * 10 ** 9)  # 9 is decimals what wsol support

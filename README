@@ -1,0 +1,46 @@
+# 🚀 Trading Bot
+
+This is a fully automated, asynchronous trading bot built for the Solana and BSC blockchains.  
+It detects and reacts to token buy signals from Telegram groups in real time, processes those signals using regex, and executes buy/sell orders based on a dynamic profit-taking strategy.
+
+> 💡 Built entirely in Python using `asyncio`, this project demonstrates deep understanding of asynchronous programming, API integration, and production-grade architecture.
+
+---
+
+## 🔧 Features
+
+- **Real-time Telegram monitoring** using a Telegram Userbot
+- **Regex-based signal parsing** to extract token contract addresses
+- **Dynamic filtering** to detect good tokens before buying
+- **Auto-buy and sell logic** based on pre-set profit/stop-loss strategies
+- **Concurrency-first design** using Python’s `asyncio` and multiple tasks
+- **Error-resilient architecture** with logging and modular design
+- **Data persistence** with SQLite for trade tracking
+
+---
+
+## 🧠 What I Learned
+
+This project taught me:
+
+- How to structure a real-world project with clear modules and responsibilities
+- How to use `asyncio` to run multiple background tasks concurrently (e.g., Telegram monitoring + trade tracking)
+- How REST APIs and blockchain interactions fit together
+- How to implement logging, error handling, and persistent storage
+- The complexity of working with real-time systems and external services
+- How to create robust and scalable systems that run 24/7
+
+---
+
+## 🛠️ Tech Stack
+
+- **Python 3.11**
+- `asyncio`, `aiohttp`, `aiosqlite`
+- Telegram Userbot (`telethon`)
+- Solana Python SDKs
+-web3 SDKs
+- Custom heuristics & trading logic
+
+---
+
+

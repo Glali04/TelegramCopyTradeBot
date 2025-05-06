@@ -10,7 +10,7 @@ class TrackedToken:
     def __init__(self, base_token):
         # this data we need to be able to automatize token swap and program will automatically know when to sell
         self.base_token: str = base_token
-        self.quote_token: str = None  # here we store wsol and wbnb for trading (depending on which chain we are)
+        self.quote_token: str = None  # here we store wsol/wbnb for trading (depending on which chain we are)
         self.buy_price: float = None
         self.raw_amount: int = None
         self.ath_price: float = None

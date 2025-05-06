@@ -1,7 +1,7 @@
 import re
 
 
-# it will only track solana_utils addresses, there is the most trade (for my bot eth transactions would be to expensive,
+# it will only track solana and bsc addresses, there is the most trade (for my bot eth transactions would be to expensive,
 # other blockchains is not that active to worth looking them)
 def extract_token_address(text: str):
     # Regex pattern for check if in the text provided a dex URL

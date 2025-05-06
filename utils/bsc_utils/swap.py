@@ -68,15 +68,10 @@ async def execute_swap(token_in, token_out, amount_in, router_version):
         with attempt:
             try:
                 gas_price = await get_bsc_gas_price()
-                print(f"gas {gas_price}")
                 latest_block = await w3.eth.get_block('latest') # await the coroutine first
                 timestamp = latest_block.get('timestamp', int(time.time())) + 10000 # Now access 'timestamp'
-                print(f"timestamp {timestamp}")
                 tx_count = await w3.eth.get_transaction_count(account_address, 'pending')
-                print(f"tx_count {tx_count}")
                 gas_price_in_wei = Web3.to_wei(gas_price, 'gwei')
-                print(f"gas_price {gas_price_in_wei}")
-                print("we are inside try")
                 if router_version == "v2":
                     coroutine_swap_txn = v2_router.functions.swapExactTokensForTokens(
                         amount_in,

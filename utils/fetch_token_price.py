@@ -8,7 +8,6 @@ from utils.solana_utils.trade_execution import sell_token
 from utils.bsc_utils.swap import swap_tokens
 from config.settings import headers_for_solana, headers_for_bsc
 
-
 base_url = "https://public-api.birdeye.so"
 
 
@@ -51,14 +50,14 @@ async def fetch_prices(tracked_tokens, headers):
 
 async def check_prices(response, tracked_tokens, blockchain):
     if blockchain == "solana":
-        sell = sell_token # ✅ Assign function reference
+        sell = sell_token  # Assign function reference
     else:
         sell = swap_tokens
     for token in tracked_tokens:
         token_price = response.get("data", {}).get(f"{token.base_token}", {}).get("value")
         """i added also to check do we have token_price because if we bought token while we checking the previous token
         price fetch for active trades, for this token we will not have price(because the token is added to token list
-        but price is not fetched for it) and the program will throw error, for other statements we already know do we
+        but price is not fetched for it yet) and the program will throw error, for other statements we already know do we
         have price because we check ath first"""
         if token_price is None:
             continue
@@ -70,7 +69,7 @@ async def check_prices(response, tracked_tokens, blockchain):
             token.ath_price = token_price
             token.unix_timestamp = timestamp
             print("reached 15% profit, selling 30%", token.base_token)
-            await sell(token, sell_all=False) # Partial sell
+            await sell(token, sell_all=False)  # Partial sell
         # if current price is higher than saved ath we save new ath
         elif token_price >= token.buy_price * 1.30:
             token.ath_price = token_price
@@ -85,7 +84,7 @@ async def check_prices(response, tracked_tokens, blockchain):
         elif token.ath_price and token_price <= token.ath_price * loss_precentage:
             token.end_time = timestamp
             token.exit_reason = "we reached ath then price dropped 10% or 20%, most likely sold in profit"
-            print("token price dropped 10% or 30% selling all", token.base_token, loss_precentage)
+            print(token.exit_reason, token.base_token, loss_precentage)
             await sell(token, sell_all=True)
         # if token dropped 10% from buy price we will sell everything (this will only trigger if we did not reach ath
         # first)

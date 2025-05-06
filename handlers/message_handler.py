@@ -5,15 +5,14 @@ import asyncio
 from datetime import datetime
 
 import logging
+
 logging.basicConfig(format='[%(levelname)s %(asctime)s] %(name)s: %(message)s', level=logging.INFO)
 
 # Create an async queue to store messages
 message_queue = asyncio.Queue()
 
 
-
-
-# Function to process messages asynchronously
+# Function to process messages asynchronously, every message from telegram we put in queue and process them from there
 async def process_messages():
     while True:
         message = await message_queue.get()  # Get message from the queue
@@ -42,9 +41,9 @@ async def process_messages():
 
 
 # Function to capture messages from Telegram channels
-#'CallAnalyserBSC'
-@client.on(events.NewMessage(chats=['CallAnalyserSol', 'marcellcooks', 'TheCorleoneEmpire',
-                                    'gogetacalls', 'dr_crypto_channel']))  # Listens to messages from channels
+@client.on(events.NewMessage(chats=['CallAnalyserSol', 'marcellcooks', 'TheCorleoneEmpire', 'CallAnalyserBSC'
+                                                                                            'gogetacalls',
+                                    'dr_crypto_channel']))  # Listens to messages from channels
 async def callers_messages(event):
     print(f"Received message from {event.chat_id}, {datetime.now()}, {event.raw_text}")
     await message_queue.put(event.message)  # Add message to queue

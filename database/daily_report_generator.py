@@ -1,9 +1,8 @@
 import asyncio
 
 import aiosqlite
-import pandas as pd
 
-
+"""it generates me a report how my bot did in a given day, the day we give with timestamp"""
 async def fetch_trades(blockchain, start_time, end_time):
     async with aiosqlite.connect("finished_trades.db") as database:
         table = blockchain + "_finished_trades"

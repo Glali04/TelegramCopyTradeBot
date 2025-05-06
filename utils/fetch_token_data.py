@@ -9,12 +9,12 @@ from config.settings import WSOL_ADDRESS,WBNB_ADDRESS
 
 """first we will fetch data from dexscreener to get all information about the token, that maybe we will buy. 
 depending on how the message was sent in the group, we can get information about the token on various ways, 
-the actual ca or pair id was sent in the channel"""
+the actual contract address or pair id was sent in the channel"""
 
 
-# if market cap is between defined limit and token is not on pumpfun or moonshot, we will create an instance of
-# TrackedToken also we can trade bsc tokens there is the limitation also the market cap, and it must be traded on
-# pancakeswap
+"""if market cap is between defined limit and token is not on pumpfun or moonshot, we will create an instance of
+TrackedToken also we can trade bsc tokens there is the limitation also the market cap, and it must be traded on
+pancakeswap"""
 async def request_token_information(fetch_token_information: dict, user_name: str):
     # either we will open a client session or we use an already created to this server
     base_url = "https://api.dexscreener.com"

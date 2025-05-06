@@ -15,17 +15,17 @@ async def main():
     # Set up Solana async client
     await set_up_async_client_for_solana_rpc()
 
-    # This is where your event loop is managed
+    # This is where event loop is managed
     loop = asyncio.get_event_loop()
 
     # Run background tasks using the same loop
     loop.create_task(sol_price.sol_price_loop())
-    #loop.create_task(bnb_price.bnb_price_loop())
-    #loop.create_task(gas_price.bsc_gas_price_loop())
+    loop.create_task(bnb_price.bnb_price_loop())
+    loop.create_task(gas_price.bsc_gas_price_loop())
     loop.create_task(process_messages())
     loop.create_task(process_db_queue())
     loop.create_task(track_token_prices_for_solana())
-    #loop.create_task(track_token_prices_for_bsc())
+    loop.create_task(track_token_prices_for_bsc())
 
     # Start Telethon client
     async with client:
@@ -38,5 +38,4 @@ atexit.register(lambda: asyncio.run(client.disconnect()))
 atexit.register(lambda: asyncio.run(http_client.close()))
 
 if __name__ == "__main__":
-    # Run the main coroutine using asyncio.run() directly here.
     asyncio.run(main())

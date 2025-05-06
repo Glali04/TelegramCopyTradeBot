@@ -1,5 +1,5 @@
-# sending swap transaction to the solana_utils blockchain
-# here we will sign and send the sell transaction
+# sending swap transaction to the solana blockchain
+# here we will sign and send the transaction
 import asyncio
 import base64
 import time

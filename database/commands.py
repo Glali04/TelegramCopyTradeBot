@@ -51,5 +51,5 @@ async def delete_all_records(blockchain):
             await database.commit()  # Commit the changes to the database
         print(f"All records from table {table} have been deleted.")
 
-# asyncio.run(statistic(0, 0, "bsc"))
-# asyncio.run(delete_all_records("bsc"))
+#asyncio.run(statistic(0, 0, "Solana"))
+#asyncio.run(delete_all_records("solana"))

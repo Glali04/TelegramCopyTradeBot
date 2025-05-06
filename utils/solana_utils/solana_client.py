@@ -1,3 +1,4 @@
+import asyncio
 import json
 import base58
 
@@ -36,4 +37,3 @@ def get_keypair():
     keypair_bytes = base58.b58decode(data.get("keypair"))
     keypair = Keypair.from_bytes(keypair_bytes)
     return keypair
-

@@ -19,13 +19,13 @@ async def fetch_trades(blockchain, start_time, end_time):
             MIN(sold) AS most_lose,
             MAX(sold) AS most_gain
         FROM {table}
-        WHERE start_time >= {start_time}
-        AND start_time <= {end_time}
+        WHERE start_time >= ? AND start_time <= ?
         """
-        async with database.execute(query) as cursor:
-            row = await cursor.fetchone() # results of query in one row
-            columns = [desc[0] for desc in cursor.description]  # get the metadata (which column we get in query)
+
+        async with database.execute(query, (start_time, end_time)) as cursor:
+            row = await cursor.fetchone()
+            columns = [desc[0] for desc in cursor.description]
             return dict(zip(columns, row))  # convert to dictionary
 
-
-#asyncio.run(fetch_trades("solana", 1743458400.0, 1743544800000.0))
+result = asyncio.run(fetch_trades("solana", 1744950278, 1745209478))
+print(result)

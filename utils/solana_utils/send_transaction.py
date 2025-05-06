@@ -28,8 +28,7 @@ def build_and_sign_transaction(swap_transaction):
     return signed_tx
 
 
-async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, sell_transaction=False,
-                                       sell_all=False, out_amount=None):
+async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, sell_transaction=False, sell_all=False):
     signed_tx = build_and_sign_transaction(swap_transaction)
     connection = await get_client()
 
@@ -53,11 +52,14 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, se
 
                 if confirmed:
                     print(f"✅ Transaction {signature} confirmed!")
+                    # from confirmed transaction we will get the amount of token we bought
+                    balance = await fetch_balance_for_trade_from_transaction(connection, signature,
+                                                                             token, keypair.pubkey(), sell_transaction)
+
                     # we will look at does the transaction is sell or buy transaction
                     if sell_transaction:
-                        token.sold += out_amount
+                        token.sold += balance
                         print(token.sold)
-                        print(token.user_name)
                         # transaction is confirmed if we sold everything we will remove it from list else we will
                         # take 15% profit taking (strategy)
                         if sell_all:
@@ -71,13 +73,10 @@ async def send_and_confirm_transaction(swap_transaction, token: TrackedToken, se
                         print("token sold")
                         return True
 
-                    # from confirmed transaction we will get the amount of token we bought
-                    token_balance = await fetch_balance_for_trade_from_transaction(connection, signature,
-                                                                                   token, keypair.pubkey())
-                    print("token bought successfully")
-                    if token_balance:
+                    else:
+                        print("token bought successfully")
                         # the raw balance of token we bought with this trade
-                        token.raw_amount = token_balance
+                        token.raw_amount = balance
                         # if we bought given token we will need to add it to tracked tokens
                         solana_tracked_tokens.append(token)
                         # more information about why we need this fields in tracked_tokens module
@@ -127,7 +126,7 @@ async def confirm_transaction(connection, txid):
     return False
 
 
-async def fetch_balance_for_trade_from_transaction(connection, txid, token, wallet_pubkey):
+async def fetch_balance_for_trade_from_transaction(connection, txid, token, wallet_pubkey, sell_tx):
     attempt_counter = 0
     async for attempt in AsyncRetrying(stop=stop_after_attempt(5), wait=wait_fixed(1)):  # Retry up to 5 times
         with attempt:
@@ -145,6 +144,23 @@ async def fetch_balance_for_trade_from_transaction(connection, txid, token, wall
                 if not tx_data:
                     raise Exception("❌ Transaction data is empty")
 
+                """to get the exact amount of sol what we received from each trade we will fetch it from tx and do not
+                from jupiter qoute, with this expression we will know do we fetch balance for buy or sell"""
+                if sell_tx:
+                    print("we fetch SOL balance from native balances")
+                    accounts = tx_data.transaction.message.account_keys
+                    for account in accounts:
+                        account_index = 0
+                        if account.pubkey == wallet_pubkey:
+                            break
+                        account_index += 1
+
+                    pre_balance = tx_data.meta.pre_balances[account_index]
+                    post_balance = tx_data.meta.post_balances[account_index]
+                    token_received = post_balance - pre_balance
+                    print(f"Received SOL from trade sell: {token_received} lamports")
+                    return token_received
+
                 # Extract pre and post token balances safely
                 pre_balances = tx_data.meta.pre_token_balances
                 post_balances = tx_data.meta.post_token_balances
@@ -152,6 +168,7 @@ async def fetch_balance_for_trade_from_transaction(connection, txid, token, wall
                 pre_balance = 0
                 post_balance = 0
                 decimals = 0
+
                 # Extract the balance for the given token mint and wallet
                 for entry in pre_balances:
                     if str(entry.mint) == token.base_token and entry.owner == wallet_pubkey:
@@ -168,7 +185,6 @@ async def fetch_balance_for_trade_from_transaction(connection, txid, token, wall
                 bought_with = float(BUY_AMOUNT_IN_US_DOLLAR)
                 token.buy_price = float(bought_with / (token_received / (10 ** decimals)))
                 print(f"Token balance change: {token_received} raw units")
-                print(f"buy price {token.buy_price}")
 
                 return token_received
 

@@ -63,27 +63,33 @@ async def check_prices(response, tracked_tokens, blockchain):
         if token_price is None:
             continue
         timestamp = time.time()
+        loss_precentage = 0.8 if token.reached_30_precentage_profit else 0.9
         # this means we reached 15% profit first time
         if (token.ath_price is None) and (token_price >= token.buy_price * 1.15):
-            # we set ath to current price and sell 25%
+            # we set ath to current price and sell 30%
             token.ath_price = token_price
             token.unix_timestamp = timestamp
-            print("reached 15% profit, selling 25%", token.base_token)
+            print("reached 15% profit, selling 30%", token.base_token)
             await sell(token, sell_all=False) # Partial sell
         # if current price is higher than saved ath we save new ath
+        elif token_price >= token.buy_price * 1.30:
+            token.ath_price = token_price
+            token.unix_timestamp = timestamp
+            print("reached 30% profit, selling another 30%", token.base_token)
+            await sell(token, sell_all=False)  # Partial sell
         elif token.ath_price and token_price > token.ath_price:
             token.ath_price = token_price
             token.unix_timestamp = timestamp
             print("new ath for the token ", token.base_token)
-        # if token fall 15% from ath we sell everything:
-        elif token.ath_price and token_price <= token.ath_price * 0.85:
+        # if token fall 10% or 20% from ath we sell everything:
+        elif token.ath_price and token_price <= token.ath_price * loss_precentage:
             token.end_time = timestamp
-            token.exit_reason = "we reached ath then price dropped 15%, most likely sold in profit"
-            print("token price dropped 15% selling all", token.base_token)
+            token.exit_reason = "we reached ath then price dropped 10% or 20%, most likely sold in profit"
+            print("token price dropped 10% or 30% selling all", token.base_token, loss_precentage)
             await sell(token, sell_all=True)
         # if token dropped 10% from buy price we will sell everything (this will only trigger if we did not reach ath
         # first)
-        elif token_price <= token.buy_price * 0.85:
+        elif token_price <= token.buy_price * 0.9:
             token.end_time = timestamp
             token.exit_reason = "we sold in loss"
             print("sold in loss", token.base_token)

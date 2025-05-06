@@ -15,6 +15,7 @@ class TrackedToken:
         self.raw_amount: int = None
         self.ath_price: float = None
         self.unix_timestamp: float = None
+        self.reached_30_precentage_profit: bool = False
         self.approved: bool = False  # on bsc network we need to give approves for dexs router contract to spend
         # specified amount of given token on your behalf
 

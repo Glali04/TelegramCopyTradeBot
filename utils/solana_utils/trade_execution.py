@@ -22,7 +22,7 @@ async def buy_token(token_to_buy: TrackedToken):
     raw_amount_sol = get_raw_amount_of_sol(sol_price)
     endpoint_for_quote = f"swap/v1/quote?inputMint={token_to_buy.quote_token}&outputMint={token_to_buy.base_token}" \
                          f"&amount={raw_amount_sol}" \
-                         f"&slippageBps=2000&restrictIntermediateTokens=true&maxAccounts=64"
+                         f"&slippageBps=400&restrictIntermediateTokens=true&maxAccounts=64"
     quote = await quote_api(endpoint_for_quote)
     if quote:
         endpoint_for_swap = f"swap/v1/swap"
@@ -46,15 +46,14 @@ async def sell_token(token_to_sell: TrackedToken, sell_all: bool):
 
     endpoint_for_quote = f"swap/v1/quote?inputMint={token_to_sell.base_token}&outputMint={token_to_sell.quote_token}" \
                          f"&amount={int(sell_amount)}" \
-                         f"&slippageBps=2000&restrictIntermediateTokens=true&maxAccounts=64"
+                         f"&slippageBps=400&restrictIntermediateTokens=true&maxAccounts=64"
     quote = await quote_api(endpoint_for_quote)
     if quote:
         endpoint_for_swap = f"swap/v1/swap"
-        out_amount = int(quote.get("outAmount"))
         swap = await swap_api(endpoint_for_swap, quote)
         if swap:
             result = await send_and_confirm_transaction(swap.get("swapTransaction"), token_to_sell,
-                                                        out_amount=out_amount, sell_all=sell_all, sell_transaction=True)
+                                                        sell_all=sell_all, sell_transaction=True)
             if result:
                 print(f"successfully sold the token: {token_to_sell.base_token}")
             else:

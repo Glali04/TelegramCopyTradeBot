@@ -42,7 +42,8 @@ async def process_messages():
 
 
 # Function to capture messages from Telegram channels
-@client.on(events.NewMessage(chats=['CallAnalyserBSC', 'CallAnalyserSol', 'marcellcooks', 'TheCorleoneEmpire',
+#'CallAnalyserBSC'
+@client.on(events.NewMessage(chats=['CallAnalyserSol', 'marcellcooks', 'TheCorleoneEmpire',
                                     'gogetacalls', 'dr_crypto_channel']))  # Listens to messages from channels
 async def callers_messages(event):
     print(f"Received message from {event.chat_id}, {datetime.now()}, {event.raw_text}")

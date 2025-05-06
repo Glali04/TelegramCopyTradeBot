@@ -20,12 +20,12 @@ async def main():
 
     # Run background tasks using the same loop
     loop.create_task(sol_price.sol_price_loop())
-    loop.create_task(bnb_price.bnb_price_loop())
-    loop.create_task(gas_price.bsc_gas_price_loop())
+    #loop.create_task(bnb_price.bnb_price_loop())
+    #loop.create_task(gas_price.bsc_gas_price_loop())
     loop.create_task(process_messages())
     loop.create_task(process_db_queue())
     loop.create_task(track_token_prices_for_solana())
-    loop.create_task(track_token_prices_for_bsc())
+    #loop.create_task(track_token_prices_for_bsc())
 
     # Start Telethon client
     async with client:

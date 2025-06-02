@@ -34,23 +34,20 @@ async def track_token_prices_for_bsc():
 async def fetch_prices(tracked_tokens, headers):
     # every time we fetch active trades we will reset list and endpoint
     endpoint = "defi/multi_price?list_address="
-    list_of_active_trade_addresses = []
+    """we will use set that way from each token address we have in active trades we will have only one instance"""
+    active_trade_addresses_set = set()
     for token in tracked_tokens:
-        token_address = token.base_token
-        if token_address not in list_of_active_trade_addresses:
-            list_of_active_trade_addresses.append(token_address)
-            endpoint += f"{token_address},"
-    """removes the last character(the last char will be coma this is the easiest way to remove it), other ways we
-    can not surely know when we added the last token to endpoint"""
-    endpoint = endpoint[:-1]
-    print(f"fetching prices for: {list_of_active_trade_addresses} with endpoint: {endpoint}")
+        active_trade_addresses_set.add(token.base_token)
+    # Join will add commas between elements
+    endpoint += ",".join(active_trade_addresses_set)
+    print(f"fetching prices for: {active_trade_addresses_set} with endpoint: {endpoint}")
     response = await http_client.fetch(base_url, endpoint, headers=headers)
     return response
 
 
 async def check_prices(response, tracked_tokens, blockchain):
     if blockchain == "solana":
-        sell = sell_token  # Assign function reference
+        sell = sell_token  # Assign function reference (callback)
     else:
         sell = swap_tokens
     for token in tracked_tokens:

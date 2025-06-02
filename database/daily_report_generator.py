@@ -25,6 +25,6 @@ async def fetch_trades(blockchain, start_time, end_time):
             row = await cursor.fetchone()
             columns = [desc[0] for desc in cursor.description]
             return dict(zip(columns, row))  # convert to dictionary
-
+#send time in timestamp
 result = asyncio.run(fetch_trades("solana", 1744950278, 1745209478))
 print(result)

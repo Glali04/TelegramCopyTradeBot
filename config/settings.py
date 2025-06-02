@@ -15,8 +15,7 @@ WSOL_ADDRESS = "So11111111111111111111111111111111111111112"
 PRIVATE_KEY = os.getenv("BSC_PRIVATE_KEY")
 BSC_RPC_URL = "https://bsc-dataseed1.binance.org/"
 
-
-#i will store here also constants which i need more then one place in my project
+# i will store here also constants which i need more then one place in my project
 headers_for_solana = {
     "accept": "application/json",
     "x-chain": "solana",
